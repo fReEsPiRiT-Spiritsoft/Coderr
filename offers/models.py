@@ -20,7 +20,16 @@ class Offer(models.Model):
 
 class OfferDetail(models.Model):
     offer = models.ForeignKey(Offer, on_delete=models.CASCADE, related_name='details')
-    url = models.URLField(max_length=1024)
+    title = models.CharField(max_length=255)
+    revisions = models.IntegerField(default=0)
+    delivery_time_in_days = models.IntegerField(default=0)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    features = models.JSONField(blank=True, default=list)
+    offer_type = models.CharField(max_length=20, choices=(
+        ('basic', 'basic'),
+        ('standard', 'standard'),
+        ('premium', 'premium'),
+    ), default='basic')
 
     def __str__(self):
-        return f'OfferDetail {self.id} for Offer {self.offer_id}'
+        return f'OfferDetail {self.id} - {self.title}'
