@@ -63,13 +63,9 @@ Before you start, make sure the following are installed on your machine:
     python manage.py migrate
     ```
 
-    5. (Optional) Demo-Daten laden:
 
-    ```bash
-    python manage.py create_demo_data
-    ```
 
-    6. Entwicklungsserver starten:
+    5. Entwicklungsserver starten:
 
     ```bash
     python manage.py runserver
@@ -91,16 +87,6 @@ Before you start, make sure the following are installed on your machine:
     pytest
     pytest --cov
     ```
-
-    **Demo-Benutzer**
-    Nach Ausführung von `create_demo_data` werden (u. a.) folgende Accounts angelegt:
-
-    - kevin / asdasd24 (business)
-    - anna / asdasd24 (business)
-    - andrey / asdasd (customer)
-    - lisa / asdasd24 (customer)
-
-    Die Kommandozeile ist idempotent — mehrfaches Ausführen erzeugt keine Duplikate.
 
     **Wichtige API-Endpunkte (Kurzüberblick)**
 
