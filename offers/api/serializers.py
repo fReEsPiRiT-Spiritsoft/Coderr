@@ -53,7 +53,6 @@ class OfferCreateSerializer(serializers.ModelSerializer):
         fields = ('title', 'image', 'description', 'min_price', 'min_delivery_time', 'details')
 
     def create(self, validated_data):
-        # user kommt von serializer.save(user=...) in validated_data
         user = validated_data.pop('user')
         details_data = validated_data.pop('details', [])
         offer = Offer.objects.create(user=user, **validated_data)

@@ -29,15 +29,12 @@ class ProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ('user', 'username', 'email', 'created_at')
 
     def update(self, instance, validated_data):
-        # Handle nested user data
         user_data = validated_data.pop('user', {})
         if 'first_name' in user_data:
             instance.user.first_name = user_data['first_name']
         if 'last_name' in user_data:
             instance.user.last_name = user_data['last_name']
         instance.user.save()
-
-        # Update profile fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()

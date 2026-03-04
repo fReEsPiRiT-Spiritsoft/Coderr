@@ -63,7 +63,6 @@ class ReviewListAPITests(APITestCase):
         resp = self.client.get(url, HTTP_AUTHORIZATION=f'Token {self.token1.key}')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.json()
-        # Sollten nach rating absteigend sortiert sein
         self.assertEqual(data[0]['rating'], 5)
         self.assertEqual(data[1]['rating'], 4)
         self.assertEqual(data[2]['rating'], 3)

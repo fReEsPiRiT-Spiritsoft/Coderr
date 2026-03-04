@@ -31,10 +31,7 @@ class ReviewListCreateAPIView(ListCreateAPIView):
 
     def get_queryset(self):
         qs = Review.objects.select_related('business_user', 'reviewer').all()
-
         params = self.request.query_params
-
-        # filters
         business_user_id = params.get('business_user_id')
         if business_user_id:
             try:

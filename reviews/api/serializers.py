@@ -38,11 +38,8 @@ class ReviewCreateSerializer(serializers.Serializer):
         from django.contrib.auth.models import User
         reviewer = self.context['request'].user
         business_user_id = data['business_user']
-        
-        # Check if reviewer already has a review for this business user
         if Review.objects.filter(reviewer=reviewer, business_user_id=business_user_id).exists():
             raise serializers.ValidationError("You can only leave one review per business user.")
-        
         return data
 
     def create(self, validated_data):

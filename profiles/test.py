@@ -9,7 +9,6 @@ class ProfileAPITests(APITestCase):
         self.user = User.objects.create_user(
             username='profuser', email='prof@example.com', password='Pass12345'
         )
-        # Erstelle ein aussagekräftiges Profile-Objekt (felder laut Spec)
         self.profile = Profile.objects.create(
             user=self.user,
             first_name='Max',
@@ -63,7 +62,6 @@ class ProfileAPITests(APITestCase):
         self.assertEqual(data.get('tel'), "000111222")
         self.assertEqual(data.get('description'), "Updated business description")
         self.assertEqual(data.get('working_hours'), "8-16")
-        # email is proxied to user.email via serializer's source='user.email'
         self.user.refresh_from_db()
         self.assertEqual(self.user.email, "newemail@example.com")
 

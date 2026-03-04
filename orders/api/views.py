@@ -93,7 +93,6 @@ class OrderCountAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, business_user_id):
-        # Prüfe ob der User existiert
         if not User.objects.filter(pk=business_user_id).exists():
             return Response(
                 {'detail': 'Business user not found.'},
@@ -117,7 +116,6 @@ class CompletedOrderCountAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, business_user_id):
-        # Prüfe ob der User existiert
         if not User.objects.filter(pk=business_user_id).exists():
             return Response(
                 {'detail': 'Business user not found.'},

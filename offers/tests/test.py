@@ -7,7 +7,7 @@ from profiles.models import Profile
 
 class OffersAPITests(APITestCase):
     def setUp(self):
-        # users
+
         self.business_user = User.objects.create_user(
             username='biz', email='biz@example.com', password='Pass12345'
         )
@@ -15,15 +15,14 @@ class OffersAPITests(APITestCase):
             username='cust', email='cust@example.com', password='Pass12345'
         )
 
-        # profiles
+
         Profile.objects.create(user=self.business_user, type='business')
         Profile.objects.create(user=self.customer_user, type='customer')
 
-        # tokens
+
         self.business_token = Token.objects.create(user=self.business_user)
         self.customer_token = Token.objects.create(user=self.customer_user)
 
-        # an offer by business user
         self.offer = Offer.objects.create(
             user=self.business_user,
             title='Website Design',
@@ -38,7 +37,7 @@ class OffersAPITests(APITestCase):
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.json()
-        # pagination -> results present
+
         self.assertIn('results', data)
         results = data['results']
         self.assertTrue(len(results) >= 1)
@@ -63,7 +62,7 @@ class OffersAPITests(APITestCase):
         }
         resp = self.client.post(url, payload, format='json', HTTP_AUTHORIZATION=f'Token {self.business_token.key}')
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-        # DB objects created
+
         offer = Offer.objects.filter(title='Graphicpack').first()
         self.assertIsNotNone(offer)
         self.assertEqual(OfferDetail.objects.filter(offer=offer).count(), 2)
@@ -90,7 +89,7 @@ class OffersAPITests(APITestCase):
         }
         resp = self.client.post(url, payload, format='json')
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
-# filepath: /home/patricks/Schreibtisch/Developer Academie/!Backend-Kurs/Coderr/offers/tests/test.py
+
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.contrib.auth.models import User
@@ -100,7 +99,7 @@ from profiles.models import Profile
 
 class OffersAPITests(APITestCase):
     def setUp(self):
-        # users
+     
         self.business_user = User.objects.create_user(
             username='biz', email='biz@example.com', password='Pass12345'
         )
@@ -108,15 +107,14 @@ class OffersAPITests(APITestCase):
             username='cust', email='cust@example.com', password='Pass12345'
         )
 
-        # profiles
+
         Profile.objects.create(user=self.business_user, type='business')
         Profile.objects.create(user=self.customer_user, type='customer')
 
-        # tokens
+
         self.business_token = Token.objects.create(user=self.business_user)
         self.customer_token = Token.objects.create(user=self.customer_user)
 
-        # an offer by business user
         self.offer = Offer.objects.create(
             user=self.business_user,
             title='Website Design',
@@ -131,7 +129,6 @@ class OffersAPITests(APITestCase):
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.json()
-        # pagination -> results present
         self.assertIn('results', data)
         results = data['results']
         self.assertTrue(len(results) >= 1)
@@ -156,7 +153,7 @@ class OffersAPITests(APITestCase):
         }
         resp = self.client.post(url, payload, format='json', HTTP_AUTHORIZATION=f'Token {self.business_token.key}')
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-        # DB objects created
+  
         offer = Offer.objects.filter(title='Graphicpack').first()
         self.assertIsNotNone(offer)
         self.assertEqual(OfferDetail.objects.filter(offer=offer).count(), 2)

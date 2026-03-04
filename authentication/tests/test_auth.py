@@ -39,7 +39,6 @@ class AuthTests(APITestCase):
         self.assertIn('token', resp.data)
         self.assertEqual(resp.data['username'], 'loginuser')
         self.assertEqual(resp.data['email'], 'li@example.com')
-        # token from response must match stored token
         token = Token.objects.get(user=user)
         self.assertEqual(resp.data['token'], token.key)
 
