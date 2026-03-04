@@ -1,8 +1,16 @@
+"""Serializers for the reviews API.
+
+Includes serializers for reading, creating and updating reviews. The
+create serializer enforces one review per reviewer/business pair.
+"""
+
 from rest_framework import serializers
 from reviews.models import Review
 
 
 class ReviewSerializer(serializers.ModelSerializer):
+    """Serializer for reading `Review` instances."""
+
     business_user = serializers.IntegerField(source='business_user.id', read_only=True)
     reviewer = serializers.IntegerField(source='reviewer.id', read_only=True)
     created_at = serializers.DateTimeField(read_only=True, format='%Y-%m-%dT%H:%M:%SZ')
@@ -22,6 +30,12 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'business_user', 'reviewer', 'created_at', 'updated_at')
 
 class ReviewCreateSerializer(serializers.Serializer):
+    """Create a new review.
+
+    Validates that the target business user exists and that the reviewer
+    has not already left a review for the same business user.
+    """
+
     business_user = serializers.IntegerField()
     rating = serializers.IntegerField(min_value=1, max_value=5)
     description = serializers.CharField(required=False, allow_blank=True)
@@ -54,9 +68,11 @@ class ReviewCreateSerializer(serializers.Serializer):
     
 
 class ReviewUpdateSerializer(serializers.ModelSerializer):
+    """Serializer used to update rating and description of a review."""
+
     class Meta:
         model = Review
-        fields = ('rating', 'description')
+        fields = ("rating", "description")
 
     def validate_rating(self, value):
         if value < 1 or value > 5:

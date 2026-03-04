@@ -13,10 +13,6 @@ class OfferPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 100
 
-
-
-
-
 class OfferListCreateAPIView(ListCreateAPIView):
     """GET /api/offers/ and POST /api/offers/"""
     authentication_classes = [TokenAuthentication, SessionAuthentication]  

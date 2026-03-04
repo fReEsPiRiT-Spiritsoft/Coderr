@@ -1,20 +1,28 @@
-from rest_framework.generics import ListCreateAPIView
+"""Views for the reviews API.
+
+List and detail endpoints for reviews. Creation is restricted to
+customer users while retrieve/update/delete operations are performed
+by the original reviewer.
+"""
+
+from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.generics import (
+    ListCreateAPIView,
+    RetrieveUpdateDestroyAPIView,
+)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import status
+
 from reviews.models import Review
-from .serializers import ReviewSerializer, ReviewCreateSerializer, ReviewUpdateSerializer
-from .permissions import IsCustomerUser
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView
+
 from .permissions import IsCustomerUser, IsReviewCreator
+from .serializers import ReviewCreateSerializer, ReviewSerializer, ReviewUpdateSerializer
 
 
 class ReviewListCreateAPIView(ListCreateAPIView):
-    """
-    GET  /api/reviews/ -> all reviews (auth required, can filter by business_user_id/reviewer_id)
-    POST /api/reviews/ -> create review (only customer users, max 1 per business user)
-    """
+    """GET /api/reviews/ and POST /api/reviews/."""
+
     serializer_class = ReviewSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
@@ -69,18 +77,18 @@ class ReviewListCreateAPIView(ListCreateAPIView):
     
 
 class ReviewRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
+    """Retrieve, update or delete a single review.
+
+    Only the original reviewer may update or delete their review.
     """
-    GET    /api/reviews/{id}/ -> get review details
-    PATCH  /api/reviews/{id}/ -> only reviewer can update (rating, description)
-    DELETE /api/reviews/{id}/ -> only reviewer can delete (204 No Content)
-    """
-    queryset = Review.objects.select_related('business_user', 'reviewer').all()
+
+    queryset = Review.objects.select_related("business_user", "reviewer").all()
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsReviewCreator]
-    lookup_field = 'id'
+    lookup_field = "id"
 
     def get_serializer_class(self):
-        if self.request.method in ('PATCH', 'PUT'):
+        if self.request.method in ("PATCH", "PUT"):
             return ReviewUpdateSerializer
         return ReviewSerializer
 
