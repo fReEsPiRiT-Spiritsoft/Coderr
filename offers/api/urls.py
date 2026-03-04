@@ -6,3 +6,4 @@ urlpatterns = [
     path('offers/<int:id>/', OfferRetrieveUpdateDestroyAPIView.as_view(), name='api-offer-detail'),
     path('offerdetails/<int:id>/', OfferDetailRetrieveAPIView.as_view(), name='api-offerdetail-detail'),
 ]
+
