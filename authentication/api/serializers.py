@@ -2,6 +2,8 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from profiles.models import Profile
+
 
 class RegistrationSerializer(serializers.ModelSerializer):
     repeated_password = serializers.CharField(write_only=True)
@@ -25,11 +27,18 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop('repeated_password', None)
-        user_type = validated_data.pop('type', None)
+        user_type = validated_data.pop('type', 'customer')
         password = validated_data.pop('password')
         user = User.objects.create_user(password=password, **validated_data)
-        # optional: persist user_type to related profile here
+        
+        if hasattr(user, 'profile'):
+            user.profile.type = user_type
+            user.profile.save()
+        else:
+            Profile.objects.create(user=user, type=user_type)
+        
         return user
+
     
 class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)

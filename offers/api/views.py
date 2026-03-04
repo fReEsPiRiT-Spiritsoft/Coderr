@@ -1,31 +1,25 @@
-
-from rest_framework.authentication import TokenAuthentication
+from rest_framework.authentication import TokenAuthentication, SessionAuthentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateAPIView
-from .serializers import OfferListSerializer, OfferCreateSerializer, OfferRetrieveSerializer, OfferUpdateSerializer
-from .permissions import IsBusinessUser
-from offers.models import Offer
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, RetrieveAPIView
+from .serializers import OfferListSerializer, OfferCreateSerializer, OfferRetrieveSerializer, OfferUpdateSerializer, OfferDetailSerializer
+from .permissions import IsBusinessUser, IsOfferOwner
+from offers.models import Offer, OfferDetail
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
-from rest_framework.generics import RetrieveAPIView
-from .serializers import OfferRetrieveSerializer, OfferDetailRetrieveSerializer
-from .permissions import IsOfferOwner
-from offers.models import OfferDetail
-from rest_framework.generics import RetrieveUpdateDestroyAPIView
 
 
 class OfferPagination(PageNumberPagination):
-    page_size = 10
+    page_size = 6
     page_size_query_param = 'page_size'
     max_page_size = 100
 
 
+
+
+
 class OfferListCreateAPIView(ListCreateAPIView):
-    """
-    GET  /api/offers/    -> public list (supports filters/search/ordering/pagination)
-    POST /api/offers/    -> create offer, only for authenticated users with business profile
-    """
-    authentication_classes = [TokenAuthentication] 
+    """GET /api/offers/ and POST /api/offers/"""
+    authentication_classes = [TokenAuthentication, SessionAuthentication]  
     pagination_class = OfferPagination
 
     def get_permissions(self):
@@ -37,6 +31,9 @@ class OfferListCreateAPIView(ListCreateAPIView):
         if self.request.method == 'POST':
             return OfferCreateSerializer
         return OfferListSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
     def get_queryset(self):
         qs = Offer.objects.select_related('user').prefetch_related('details').all()
@@ -80,13 +77,8 @@ class OfferListCreateAPIView(ListCreateAPIView):
 
         return qs
 
-
-
-class OfferRetrieveUpdateAPIView(RetrieveUpdateAPIView):
-    """
-    GET  /api/offers/{id}/   -> authenticated users can read
-    PATCH /api/offers/{id}/  -> only creator (owner) can modify; partial update supported
-    """
+class OfferRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
+    """GET/PATCH/DELETE /api/offers/{id}/"""
     queryset = Offer.objects.select_related('user').prefetch_related('details').all()
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsOfferOwner]
@@ -97,47 +89,15 @@ class OfferRetrieveUpdateAPIView(RetrieveUpdateAPIView):
             return OfferUpdateSerializer
         return OfferRetrieveSerializer
 
-    def perform_update(self, serializer):
-        # ensure owner cannot change the 'user' field implicitly via nested data
-        serializer.save()
-
-class OfferRetrieveUpdateAPIView(RetrieveUpdateDestroyAPIView):
-    """
-    GET  /api/offers/{id}/   -> authenticated users can read
-    PATCH /api/offers/{id}/  -> only creator (owner) can modify; partial update supported
-    DELETE /api/offers/{id}/ -> only creator (owner) can delete (204 No Content)
-    """
-    queryset = Offer.objects.select_related('user').prefetch_related('details').all()
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, IsOfferOwner]
-    lookup_field = 'id'
-
-    def get_serializer_class(self):
-        if self.request.method in ('PATCH', 'PUT'):
-            return OfferUpdateSerializer
-        return OfferRetrieveSerializer
-
-    def perform_update(self, serializer):
-        serializer.save()
-
-    # optional: explicit perform_destroy to ensure any cleanup
     def perform_destroy(self, instance):
-        # delete related details first (if any custom cleanup needed)
         instance.details.all().delete()
         instance.delete()
 
 
-
 class OfferDetailRetrieveAPIView(RetrieveAPIView):
-    """
-    GET /api/offerdetails/{id}/
-    - Auth required (TokenAuthentication)
-    - 200: offer detail object
-    - 401: unauthenticated
-    - 404: not found
-    """
+    """GET /api/offerdetails/{id}/"""
     queryset = OfferDetail.objects.select_related('offer').all()
-    serializer_class = OfferDetailRetrieveSerializer
-    authentication_classes = [TokenAuthentication]
+    serializer_class = OfferDetailSerializer
+    authentication_classes = [TokenAuthentication, SessionAuthentication]
     permission_classes = [IsAuthenticated]
     lookup_field = 'id'

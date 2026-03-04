@@ -12,7 +12,7 @@ from profiles.models import Profile
 
 class OrderAPITests(APITestCase):
     def setUp(self):
-        # Create users
+
         self.customer = User.objects.create_user(
             username='customer1', email='cust@example.com', password='Pass12345'
         )
@@ -23,12 +23,11 @@ class OrderAPITests(APITestCase):
             username='other', email='other@example.com', password='Pass12345'
         )
 
-        # Create tokens
         self.customer_token = Token.objects.create(user=self.customer)
         self.business_token = Token.objects.create(user=self.business)
         self.other_token = Token.objects.create(user=self.other_user)
 
-        # Create orders
+
         self.order1 = Order.objects.create(
             customer_user=self.customer,
             business_user=self.business,
@@ -58,7 +57,7 @@ class OrderAPITests(APITestCase):
 
 class OrderAPITests(APITestCase):
     def setUp(self):
-        # Create users
+
         self.customer = User.objects.create_user(
             username='customer1', email='cust@example.com', password='Pass12345'
         )
@@ -69,12 +68,11 @@ class OrderAPITests(APITestCase):
             username='other', email='other@example.com', password='Pass12345'
         )
 
-        # Create tokens
         self.customer_token = Token.objects.create(user=self.customer)
         self.business_token = Token.objects.create(user=self.business)
         self.other_token = Token.objects.create(user=self.other_user)
 
-        # Create orders
+
         self.order1 = Order.objects.create(
             customer_user=self.customer,
             business_user=self.business,
@@ -104,7 +102,6 @@ class OrderAPITests(APITestCase):
         resp = self.client.get(url, HTTP_AUTHORIZATION=f'Token {self.customer_token.key}')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.json()
-        # customer should see both orders they are involved in
         self.assertEqual(len(data), 2)
         order_ids = [o['id'] for o in data]
         self.assertIn(self.order1.id, order_ids)
@@ -116,7 +113,6 @@ class OrderAPITests(APITestCase):
         resp = self.client.get(url, HTTP_AUTHORIZATION=f'Token {self.business_token.key}')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.json()
-        # business should see only order1 (where they are business_user)
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]['id'], self.order1.id)
         self.assertEqual(data[0]['title'], 'Logo Design')
@@ -130,7 +126,6 @@ class OrderAPITests(APITestCase):
 
     def test_get_orders_other_user_no_access(self):
         """User without involvement should see empty list"""
-        # Create a user with no orders
         new_user = User.objects.create_user(username='newuser', email='new@example.com', password='Pass12345')
         new_token = Token.objects.create(user=new_user)
         url = '/api/orders/'
@@ -143,7 +138,6 @@ class OrderAPITests(APITestCase):
         resp = self.client.get(url, HTTP_AUTHORIZATION=f'Token {self.customer_token.key}')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.json()
-        # customer should see both orders they are involved in
         self.assertEqual(len(data), 2)
         order_ids = [o['id'] for o in data]
         self.assertIn(self.order1.id, order_ids)
@@ -155,7 +149,6 @@ class OrderAPITests(APITestCase):
         resp = self.client.get(url, HTTP_AUTHORIZATION=f'Token {self.business_token.key}')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.json()
-        # business should see only order1 (where they are business_user)
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]['id'], self.order1.id)
         self.assertEqual(data[0]['title'], 'Logo Design')
@@ -169,7 +162,7 @@ class OrderAPITests(APITestCase):
 
     def test_get_orders_other_user_no_access(self):
         """User without involvement should see empty list"""
-        # Create a user with no orders
+
         new_user = User.objects.create_user(username='newuser', email='new@example.com', password='Pass12345')
         new_token = Token.objects.create(user=new_user)
         url = '/api/orders/'
@@ -180,7 +173,7 @@ class OrderAPITests(APITestCase):
 
 class OrderCreateAPITests(APITestCase):
     def setUp(self):
-        # Nutzer und Profile
+
         self.customer = User.objects.create_user(username='customer', password='Pass12345')
         self.business = User.objects.create_user(username='business', password='Pass12345')
         Profile.objects.create(user=self.customer, type='customer')
@@ -188,7 +181,7 @@ class OrderCreateAPITests(APITestCase):
         self.customer_token = Token.objects.create(user=self.customer)
         self.business_token = Token.objects.create(user=self.business)
 
-        # Angebot + Angebotsdetail
+ 
         self.offer = Offer.objects.create(
             user=self.business,
             title='Logo Design',
@@ -340,4 +333,121 @@ class OrderDeleteAPITests(APITestCase):
         """404 if order doesn't exist"""
         url = '/api/orders/99999/'
         resp = self.client.delete(url, HTTP_AUTHORIZATION=f'Token {self.admin_token.key}')
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+
+
+
+
+class OrderCountAPITests(APITestCase):
+    def setUp(self):
+        self.customer = User.objects.create_user(username='customer', password='Pass12345')
+        self.business = User.objects.create_user(username='business', password='Pass12345')
+        self.customer_token = Token.objects.create(user=self.customer)
+        self.business_token = Token.objects.create(user=self.business)
+
+
+        Order.objects.create(
+            customer_user=self.customer,
+            business_user=self.business,
+            title='Order 1',
+            price=100,
+            features=[],
+            offer_type='basic',
+            status='in_progress'
+        )
+        Order.objects.create(
+            customer_user=self.customer,
+            business_user=self.business,
+            title='Order 2',
+            price=200,
+            features=[],
+            offer_type='basic',
+            status='in_progress'
+        )
+        Order.objects.create(
+            customer_user=self.customer,
+            business_user=self.business,
+            title='Order 3',
+            price=300,
+            features=[],
+            offer_type='basic',
+            status='completed'  
+        )
+
+    def test_order_count_success(self):
+        """Count in_progress orders for business user"""
+        url = f'/api/order-count/{self.business.id}/'
+        resp = self.client.get(url, HTTP_AUTHORIZATION=f'Token {self.customer_token.key}')
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.json()
+        self.assertEqual(data['order_count'], 2)  
+
+    def test_order_count_unauthenticated(self):
+        """Unauthenticated users get 401"""
+        url = f'/api/order-count/{self.business.id}/'
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_order_count_nonexistent_user(self):
+        """Nonexistent business user returns 404"""
+        url = '/api/order-count/99999/'
+        resp = self.client.get(url, HTTP_AUTHORIZATION=f'Token {self.customer_token.key}')
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+
+
+class CompletedOrderCountAPITests(APITestCase):
+    def setUp(self):
+        self.customer = User.objects.create_user(username='customer', password='Pass12345')
+        self.business = User.objects.create_user(username='business', password='Pass12345')
+        self.customer_token = Token.objects.create(user=self.customer)
+        self.business_token = Token.objects.create(user=self.business)
+
+        Order.objects.create(
+            customer_user=self.customer,
+            business_user=self.business,
+            title='Completed Order 1',
+            price=100,
+            features=[],
+            offer_type='basic',
+            status='completed'
+        )
+        Order.objects.create(
+            customer_user=self.customer,
+            business_user=self.business,
+            title='Completed Order 2',
+            price=200,
+            features=[],
+            offer_type='basic',
+            status='completed'
+        )
+        Order.objects.create(
+            customer_user=self.customer,
+            business_user=self.business,
+            title='In Progress Order',
+            price=300,
+            features=[],
+            offer_type='basic',
+            status='in_progress'  
+        )
+
+    def test_completed_order_count_success(self):
+        """Count completed orders for business user"""
+        url = f'/api/completed-order-count/{self.business.id}/'
+        resp = self.client.get(url, HTTP_AUTHORIZATION=f'Token {self.customer_token.key}')
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.json()
+        self.assertEqual(data['completed_order_count'], 2)  
+
+    def test_completed_order_count_unauthenticated(self):
+        """Unauthenticated users get 401"""
+        url = f'/api/completed-order-count/{self.business.id}/'
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_completed_order_count_nonexistent_user(self):
+        """Nonexistent business user returns 404"""
+        url = '/api/completed-order-count/99999/'
+        resp = self.client.get(url, HTTP_AUTHORIZATION=f'Token {self.customer_token.key}')
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
