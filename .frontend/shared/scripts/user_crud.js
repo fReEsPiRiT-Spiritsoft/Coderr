@@ -23,7 +23,8 @@ function transformApiResponse(apiResponse) {
                     pk: item.user,
                     username: item.username,
                     first_name: item.first_name,
-                    last_name: item.last_name
+                    last_name: item.last_name,
+                    file: item.file,
                 },
                 file: item.file,
                 location: item.location,
