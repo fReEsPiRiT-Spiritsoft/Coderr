@@ -97,12 +97,7 @@ class OfferCreateSerializer(serializers.ModelSerializer):
         fields = ("title", "image", "description", "min_price", "min_delivery_time", "details")
 
     def create(self, validated_data):
-        """Create `Offer` and associated `OfferDetail` instances.
-
-        The `user` is expected to be provided by the view via
-        `serializer.save(user=request.user)`.
-        """
-
+        """Create `Offer` and associated `OfferDetail` instances."""
         user = validated_data.pop("user")
         details_data = validated_data.pop("details", [])
         offer = Offer.objects.create(user=user, **validated_data)
@@ -110,6 +105,11 @@ class OfferCreateSerializer(serializers.ModelSerializer):
         if objs:
             OfferDetail.objects.bulk_create(objs)
         return offer
+
+    def to_representation(self, instance):
+        """Return full offer data including id and details after creation."""
+        return OfferRetrieveSerializer(instance, context=self.context).data
+
 
 
 class OfferRetrieveSerializer(serializers.ModelSerializer):

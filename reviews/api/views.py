@@ -78,10 +78,8 @@ class ReviewListCreateAPIView(ListCreateAPIView):
 
 class ReviewRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
     """Retrieve, update or delete a single review.
-
     Only the original reviewer may update or delete their review.
     """
-
     queryset = Review.objects.select_related("business_user", "reviewer").all()
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsReviewCreator]
@@ -91,6 +89,15 @@ class ReviewRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
         if self.request.method in ("PATCH", "PUT"):
             return ReviewUpdateSerializer
         return ReviewSerializer
+
+    def update(self, request, *args, **kwargs):
+        """Update review and return full representation via ReviewSerializer."""
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = ReviewUpdateSerializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        review = serializer.save()
+        return Response(ReviewSerializer(review).data, status=status.HTTP_200_OK)
 
     def perform_destroy(self, instance):
         instance.delete()
