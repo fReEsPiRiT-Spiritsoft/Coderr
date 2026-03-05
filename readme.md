@@ -113,9 +113,6 @@ pytest --cov
 
 For full details, see the respective apps: `authentication`, `profiles`, `offers`, `orders`, `reviews`.
 
-## Related Projects
-
-- Frontend: [`coderr-frontend`](https://github.com/your-org/coderr-frontend) — the matching HTML/CSS/JS frontend for this API.
 
 ## License
 
