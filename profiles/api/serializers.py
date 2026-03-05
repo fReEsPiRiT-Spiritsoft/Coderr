@@ -22,7 +22,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="user.username", read_only=True)
     first_name = serializers.CharField(source="user.first_name", allow_blank=True, required=False)
     last_name = serializers.CharField(source="user.last_name", allow_blank=True, required=False)
-    email = serializers.EmailField(source="user.email", read_only=True)
+    email = serializers.EmailField(source="user.email", required=False)
     created_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ", read_only=True)
 
     class Meta:
@@ -41,7 +41,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             "email",
             "created_at",
         )
-        read_only_fields = ("user", "username", "email", "created_at")
+        read_only_fields = ("user", "username", "created_at")
 
     def update(self, instance, validated_data):
         """Apply updates to the profile and nested user fields.
@@ -56,6 +56,8 @@ class ProfileSerializer(serializers.ModelSerializer):
             instance.user.first_name = user_data["first_name"]
         if "last_name" in user_data:
             instance.user.last_name = user_data["last_name"]
+        if "email" in user_data:
+            instance.user.email = user_data["email"]
         instance.user.save()
 
         for attr, value in validated_data.items():
