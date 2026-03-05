@@ -28,6 +28,7 @@ This repository contains the Django REST Framework backend API. It is designed t
     ```bash
     python -m venv .venv
     source .venv/bin/activate  # macOS / Linux
+    .venv/script/activate # Windows
     ```
 
 2. Install dependencies:
@@ -36,21 +37,15 @@ This repository contains the Django REST Framework backend API. It is designed t
     pip install -r requirements.txt
     ```
 
-3. Create environment file:
 
-    ```bash
-    cp .env.example .env
-    # Set SECRET_KEY in .env (see below)
-    ```
-
-4. Migrate the database:
+3. Migrate the database:
 
 
     ```bash
     python manage.py migrate
     ```
 
-5. Start the development server:
+4. Start the development server:
 
     ```bash
     python manage.py runserver
@@ -58,14 +53,6 @@ This repository contains the Django REST Framework backend API. It is designed t
 
     The API will be available at http://127.0.0.1:8000/api/
 
-## .env – Important
-
-Open `.env` and set at least `SECRET_KEY` and `DEBUG`. You can generate a secure key like this:
-
-```python
-import secrets
-print(secrets.token_urlsafe(50))
-```
 
 ## Testing
 
