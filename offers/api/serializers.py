@@ -82,6 +82,10 @@ class OfferListSerializer(serializers.ModelSerializer):
 class OfferDetailCreateSerializer(serializers.ModelSerializer):
     """Serializer used to create nested `OfferDetail` objects."""
 
+    price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0)
+    delivery_time_in_days = serializers.IntegerField(min_value=1)
+    revisions = serializers.IntegerField(min_value=-1)
+
     class Meta:
         model = OfferDetail
         fields = ("title", "price", "delivery_time_in_days", "revisions", "features", "offer_type")
@@ -91,6 +95,8 @@ class OfferCreateSerializer(serializers.ModelSerializer):
     """Create serializer for `Offer` including optional nested details."""
 
     details = OfferDetailCreateSerializer(many=True, write_only=True, required=False)
+    min_price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0, required=False)
+    min_delivery_time = serializers.IntegerField(min_value=1, required=False)
 
     class Meta:
         model = Offer
@@ -104,6 +110,10 @@ class OfferCreateSerializer(serializers.ModelSerializer):
         objs = [OfferDetail(offer=offer, **d) for d in details_data]
         if objs:
             OfferDetail.objects.bulk_create(objs)
+            details = offer.details.all()
+            offer.min_price = min(d.price for d in details)
+            offer.min_delivery_time = min(d.delivery_time_in_days for d in details)
+            offer.save(update_fields=["min_price", "min_delivery_time"])
         return offer
 
     def to_representation(self, instance):
@@ -141,6 +151,10 @@ class OfferRetrieveSerializer(serializers.ModelSerializer):
 class OfferDetailUpdateSerializer(serializers.ModelSerializer):
     """Serializer used to update existing `OfferDetail` objects."""
 
+    price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0, required=False)
+    delivery_time_in_days = serializers.IntegerField(min_value=1, required=False)
+    revisions = serializers.IntegerField(min_value=-1, required=False)
+
     class Meta:
         model = OfferDetail
         fields = ("id", "title", "price", "delivery_time_in_days", "revisions", "features", "offer_type")
@@ -150,6 +164,8 @@ class OfferUpdateSerializer(serializers.ModelSerializer):
     """Update serializer for `Offer` supporting nested detail updates."""
 
     details = OfferDetailUpdateSerializer(many=True, required=False, write_only=True)
+    min_price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0, required=False)
+    min_delivery_time = serializers.IntegerField(min_value=1, required=False)
 
     class Meta:
         model = Offer
@@ -184,4 +200,14 @@ class OfferUpdateSerializer(serializers.ModelSerializer):
                 else:
                     OfferDetail.objects.create(offer=instance, **{k: v for k, v in d.items() if k != "id"})
 
+            details = instance.details.all()
+            if details.exists():
+                instance.min_price = min(d.price for d in details)
+                instance.min_delivery_time = min(d.delivery_time_in_days for d in details)
+                instance.save(update_fields=["min_price", "min_delivery_time"])
+
         return instance
+
+    def to_representation(self, instance):
+        """Return full offer data including id and details after update."""
+        return OfferRetrieveSerializer(instance, context=self.context).data

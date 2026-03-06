@@ -1,6 +1,8 @@
 from rest_framework.authentication import TokenAuthentication, SessionAuthentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, RetrieveAPIView
+from rest_framework.response import Response
+from rest_framework import status
 from .serializers import OfferListSerializer, OfferCreateSerializer, OfferRetrieveSerializer, OfferUpdateSerializer, OfferDetailSerializer
 from .permissions import IsBusinessUser, IsOfferOwner
 from offers.models import Offer, OfferDetail
@@ -30,6 +32,28 @@ class OfferListCreateAPIView(ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    def list(self, request, *args, **kwargs):
+        params = request.query_params
+        min_price = params.get('min_price')
+        if min_price is not None:
+            try:
+                float(min_price)
+            except ValueError:
+                return Response({'detail': 'Invalid value for min_price.'}, status=status.HTTP_400_BAD_REQUEST)
+        max_delivery = params.get('max_delivery_time')
+        if max_delivery is not None:
+            try:
+                int(max_delivery)
+            except ValueError:
+                return Response({'detail': 'Invalid value for max_delivery_time.'}, status=status.HTTP_400_BAD_REQUEST)
+        creator_id = params.get('creator_id')
+        if creator_id is not None:
+            try:
+                int(creator_id)
+            except ValueError:
+                return Response({'detail': 'Invalid value for creator_id.'}, status=status.HTTP_400_BAD_REQUEST)
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         qs = Offer.objects.select_related('user').prefetch_related('details').all()

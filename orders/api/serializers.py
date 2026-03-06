@@ -89,3 +89,7 @@ class OrderUpdateSerializer(serializers.ModelSerializer):
         if value not in valid_statuses:
             raise serializers.ValidationError(f"Invalid status. Must be one of: {', '.join(valid_statuses)}")
         return value
+
+    def to_representation(self, instance):
+        """Return full order data after update."""
+        return OrderSerializer(instance, context=self.context).data

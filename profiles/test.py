@@ -7,18 +7,16 @@ from profiles.models import Profile
 class ProfileAPITests(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            username='profuser', email='prof@example.com', password='Pass12345'
+            username='profuser', email='prof@example.com', password='Pass12345',
+            first_name='Max', last_name='Mustermann'
         )
-        self.profile = Profile.objects.create(
-            user=self.user,
-            first_name='Max',
-            last_name='Mustermann',
-            location='Berlin',
-            tel='123456789',
-            description='Business description',
-            working_hours='9-17',
-            type='business'
-        )
+        self.profile = Profile.objects.get(user=self.user)
+        self.profile.location = 'Berlin'
+        self.profile.tel = '123456789'
+        self.profile.description = 'Business description'
+        self.profile.working_hours = '9-17'
+        self.profile.type = 'business'
+        self.profile.save()
         self.token = Token.objects.create(user=self.user)
 
     def test_get_profile_success(self):
