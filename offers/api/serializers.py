@@ -85,6 +85,7 @@ class OfferDetailCreateSerializer(serializers.ModelSerializer):
     price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0)
     delivery_time_in_days = serializers.IntegerField(min_value=1)
     revisions = serializers.IntegerField(min_value=-1)
+    offer_type = serializers.ChoiceField(choices=["basic", "standard", "premium"])
 
     class Meta:
         model = OfferDetail
@@ -94,13 +95,24 @@ class OfferDetailCreateSerializer(serializers.ModelSerializer):
 class OfferCreateSerializer(serializers.ModelSerializer):
     """Create serializer for `Offer` including optional nested details."""
 
-    details = OfferDetailCreateSerializer(many=True, write_only=True, required=False)
+    details = OfferDetailCreateSerializer(many=True, write_only=True)
     min_price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0, required=False)
     min_delivery_time = serializers.IntegerField(min_value=1, required=False)
 
     class Meta:
         model = Offer
         fields = ("title", "image", "description", "min_price", "min_delivery_time", "details")
+
+    def validate_details(self, value):
+        """Ensure exactly 3 details with unique offer_types basic/standard/premium."""
+        if len(value) != 3:
+            raise serializers.ValidationError("An offer must contain exactly 3 details.")
+        offer_types = sorted([d.get("offer_type") for d in value])
+        if offer_types != ["basic", "premium", "standard"]:
+            raise serializers.ValidationError(
+                "Details must contain exactly one each of: basic, standard, premium."
+            )
+        return value
 
     def create(self, validated_data):
         """Create `Offer` and associated `OfferDetail` instances."""
@@ -154,6 +166,7 @@ class OfferDetailUpdateSerializer(serializers.ModelSerializer):
     price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0, required=False)
     delivery_time_in_days = serializers.IntegerField(min_value=1, required=False)
     revisions = serializers.IntegerField(min_value=-1, required=False)
+    offer_type = serializers.ChoiceField(choices=["basic", "standard", "premium"], required=False)
 
     class Meta:
         model = OfferDetail
@@ -198,7 +211,17 @@ class OfferUpdateSerializer(serializers.ModelSerializer):
                     except OfferDetail.DoesNotExist:
                         raise serializers.ValidationError({"details": f"OfferDetail id={detail_id} not found."})
                 else:
-                    OfferDetail.objects.create(offer=instance, **{k: v for k, v in d.items() if k != "id"})
+                    offer_type = d.get("offer_type")
+                    if offer_type:
+                        existing = OfferDetail.objects.filter(offer=instance, offer_type=offer_type).first()
+                        if existing:
+                            for attr, value in d.items():
+                                setattr(existing, attr, value)
+                            existing.save()
+                        else:
+                            OfferDetail.objects.create(offer=instance, **d)
+                    else:
+                        OfferDetail.objects.create(offer=instance, **d)
 
             details = instance.details.all()
             if details.exists():
