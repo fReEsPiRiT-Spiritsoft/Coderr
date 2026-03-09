@@ -184,6 +184,15 @@ class OfferUpdateSerializer(serializers.ModelSerializer):
         model = Offer
         fields = ("title", "description", "image", "min_price", "min_delivery_time", "details")
 
+    def validate_details(self, value):
+        """Ensure each detail has either id or offer_type for matching."""
+        for d in value:
+            if not d.get("id") and not d.get("offer_type"):
+                raise serializers.ValidationError(
+                    "Each detail must have either 'id' or 'offer_type' to identify which detail to update."
+                )
+        return value
+
     def update(self, instance, validated_data):
         """Update the offer and apply changes to nested details.
 
