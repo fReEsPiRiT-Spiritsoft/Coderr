@@ -18,6 +18,7 @@ from reviews.models import Review
 
 from .permissions import IsCustomerUser, IsReviewCreator
 from .serializers import ReviewCreateSerializer, ReviewSerializer, ReviewUpdateSerializer
+from .filters import validate_list_params, apply_review_filters
 
 
 class ReviewListCreateAPIView(ListCreateAPIView):
@@ -40,32 +41,8 @@ class ReviewListCreateAPIView(ListCreateAPIView):
     def get_queryset(self):
         qs = Review.objects.select_related('business_user', 'reviewer').all()
         params = self.request.query_params
-        business_user_id = params.get('business_user_id')
-        if business_user_id:
-            try:
-                qs = qs.filter(business_user_id=int(business_user_id))
-            except ValueError:
-                pass
-
-        reviewer_id = params.get('reviewer_id')
-        if reviewer_id:
-            try:
-                qs = qs.filter(reviewer_id=int(reviewer_id))
-            except ValueError:
-                pass
-
-        ordering = params.get('ordering')
-        allowed = {'updated_at', 'rating'}
-        if ordering:
-            key = ordering.lstrip('-')
-            if key in allowed:
-                qs = qs.order_by(ordering)
-            else:
-                qs = qs.order_by('-updated_at')
-        else:
-            qs = qs.order_by('-updated_at')
-
-        return qs
+        # Delegiere Filter-Anwendung an helpers in reviews.api.filters
+        return apply_review_filters(qs, params)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

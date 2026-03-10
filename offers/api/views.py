@@ -8,6 +8,7 @@ from .permissions import IsBusinessUser, IsOfferOwner
 from offers.models import Offer, OfferDetail
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
+from .filters import validate_list_params, apply_offer_filters
 
 
 class OfferPagination(PageNumberPagination):
@@ -35,67 +36,16 @@ class OfferListCreateAPIView(ListCreateAPIView):
 
     def list(self, request, *args, **kwargs):
         params = request.query_params
-        min_price = params.get('min_price')
-        if min_price is not None:
-            try:
-                float(min_price)
-            except ValueError:
-                return Response({'detail': 'Invalid value for min_price.'}, status=status.HTTP_400_BAD_REQUEST)
-        max_delivery = params.get('max_delivery_time')
-        if max_delivery is not None:
-            try:
-                int(max_delivery)
-            except ValueError:
-                return Response({'detail': 'Invalid value for max_delivery_time.'}, status=status.HTTP_400_BAD_REQUEST)
-        creator_id = params.get('creator_id')
-        if creator_id is not None:
-            try:
-                int(creator_id)
-            except ValueError:
-                return Response({'detail': 'Invalid value for creator_id.'}, status=status.HTTP_400_BAD_REQUEST)
+        ok, err = validate_list_params(params)
+        if not ok:
+            return Response({"detail": err}, status=status.HTTP_400_BAD_REQUEST)
+
         return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         qs = Offer.objects.select_related('user').prefetch_related('details').all()
         params = self.request.query_params
-
-        creator_id = params.get('creator_id')
-        if creator_id:
-            try:
-                qs = qs.filter(user_id=int(creator_id))
-            except ValueError:
-                pass
-
-        min_price = params.get('min_price')
-        if min_price:
-            try:
-                qs = qs.filter(min_price__gte=float(min_price))
-            except ValueError:
-                pass
-
-        max_delivery = params.get('max_delivery_time')
-        if max_delivery:
-            try:
-                qs = qs.filter(min_delivery_time__lte=int(max_delivery))
-            except ValueError:
-                pass
-
-        search = params.get('search')
-        if search:
-            qs = qs.filter(Q(title__icontains=search) | Q(description__icontains=search))
-
-        ordering = params.get('ordering')
-        allowed = {'updated_at', 'min_price'}
-        if ordering:
-            key = ordering.lstrip('-')
-            if key in allowed:
-                qs = qs.order_by(ordering)
-            else:
-                qs = qs.order_by('-updated_at')
-        else:
-            qs = qs.order_by('-updated_at')
-
-        return qs
+        return apply_offer_filters(qs, params)
 
 class OfferRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
     """GET/PATCH/DELETE /api/offers/{id}/"""
